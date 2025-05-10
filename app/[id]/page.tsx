@@ -287,7 +287,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/router";  // Import useRouter from next/router
 
 type Post = {
   id: string;
@@ -304,7 +304,8 @@ type Comment = {
 };
 
 export default function PostDetailPage() {
-  const { id } = useParams();
+  const router = useRouter();  // Use router here
+  const { id } = router.query;  // Get the id from the query params
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -332,6 +333,7 @@ export default function PostDetailPage() {
   }, [API_BASE]);
 
   const fetchPost = useCallback(async () => {
+    if (!id) return;  // Check if id exists before making the request
     try {
       const res = await fetch(`${API_BASE}/posts/getpost/${id}`, {
         credentials: "include",
@@ -345,6 +347,7 @@ export default function PostDetailPage() {
   }, [API_BASE, id]);
 
   const fetchComments = useCallback(async () => {
+    if (!id) return;  // Check if id exists before making the request
     try {
       const res = await fetch(`${API_BASE}/comments/on/${id}`, {
         credentials: "include",
@@ -357,6 +360,7 @@ export default function PostDetailPage() {
   }, [API_BASE, id]);
 
   const fetchLikes = useCallback(async () => {
+    if (!id) return;  // Check if id exists before making the request
     try {
       const res = await fetch(`${API_BASE}/likes/on/${id}`, {
         credentials: "include",
@@ -391,7 +395,7 @@ export default function PostDetailPage() {
       }
 
       setNewComment("");
-      fetchComments(); // Ensure fetching comments after adding
+      fetchComments();
     } catch {
       console.error("Error adding comment");
     } finally {
@@ -407,7 +411,7 @@ export default function PostDetailPage() {
         credentials: "include",
       });
       if (res.ok) {
-        fetchComments(); // Reload comments after deletion
+        fetchComments();
       } else {
         const err = await res.json();
         alert(err.message || "Failed to delete comment");
@@ -429,8 +433,8 @@ export default function PostDetailPage() {
       });
 
       if (res.ok) {
-        fetchComments(); // Reload comments after update
-        setEditingCommentId(null); // Reset editing state
+        fetchComments();
+        setEditingCommentId(null);
       } else {
         const err = await res.json();
         alert(err.message || "Failed to update comment");
@@ -449,7 +453,7 @@ export default function PostDetailPage() {
 
       if (res.ok) {
         setLiked(true);
-        setLikesCount((prev) => prev + 1); // Increment like count
+        setLikesCount((prev) => prev + 1);
       } else {
         const err = await res.json();
         alert(err.message || "Failed to like post");
@@ -466,7 +470,7 @@ export default function PostDetailPage() {
       fetchComments();
       fetchLikes();
     }
-  }, [id, fetchCurrentUser, fetchPost, fetchComments, fetchLikes]);
+  }, [id, fetchComments, fetchCurrentUser, fetchLikes, fetchPost]);
 
   if (error) return <p className="text-red-600 p-4">{error}</p>;
   if (!post) return <p className="p-4">Loading...</p>;
@@ -479,7 +483,9 @@ export default function PostDetailPage() {
             ▲
           </button>
         )}
-        <h1 className="text-[15px] font-medium leading-tight">{post.title}</h1>
+        <h1 className="text-[15px] font-medium leading-tight">
+          {post.title}
+        </h1>
       </div>
 
       <div className="text-gray-600 text-xs mb-4">
